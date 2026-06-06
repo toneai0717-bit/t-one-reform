@@ -295,9 +295,11 @@ function Header({ scrolled }: { scrolled: boolean }) {
 
         {/* ハンバーガー（SP） */}
         <button
-          className="md:hidden p-2"
+          type="button"
+          className="md:hidden p-3"
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label={menuOpen ? "メニューを閉じる" : "メニューを開く"}
+          aria-expanded={menuOpen}
         >
           <div className="space-y-1.5">
             {[0, 1, 2].map((i) => (
@@ -362,7 +364,7 @@ function ScrollRevealHero() {
     const onScroll = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(update); };
     update();
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
+    window.addEventListener("resize", onScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
@@ -393,13 +395,13 @@ function ScrollRevealHero() {
           {/* After（ベース） */}
           <img
             src={HERO_REVEAL.after}
-            alt="施工後のバスルーム"
+            alt="施工後の空間"
             className="absolute inset-0 w-full h-full object-cover"
           />
           {/* Before（左からワイプ） */}
           <img
             src={HERO_REVEAL.before}
-            alt="施工前のバスルーム"
+            alt="施工前の空間"
             className="absolute inset-0 w-full h-full object-cover"
             style={{ clipPath: `inset(0 0 0 ${p * 100}%)` }}
           />
@@ -692,7 +694,7 @@ function About() {
             </div>
 
             {/* スペック */}
-            <div className="fade-up fade-up-delay-2 grid grid-cols-2 gap-3">
+            <div className="fade-up fade-up-delay-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { label: "対応エリア", value: "関西全域" },
                 { label: "受付時間", value: "8:00〜17:00（日・祝休）" },
@@ -785,6 +787,7 @@ function BeforeAfterSlider({
           alt={`${label} 施工後`}
           className="absolute inset-0 w-full h-full object-cover"
           draggable={false}
+          loading="lazy"
         />
         {/* Before（右からクリップ） */}
         <img
@@ -793,6 +796,7 @@ function BeforeAfterSlider({
           className="absolute inset-0 w-full h-full object-cover"
           style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
           draggable={false}
+          loading="lazy"
         />
 
         {/* 分割ライン */}
@@ -1034,6 +1038,7 @@ function Contact() {
                   内容を確認次第、ご連絡いたします。
                 </p>
                 <button
+                  type="button"
                   onClick={() => setStatus("idle")}
                   className="mt-6 text-sm font-jp-sans underline"
                   style={{ color: "var(--color-primary)" }}
@@ -1057,7 +1062,7 @@ function Contact() {
                     <input
                       id="name" type="text" placeholder="山田 太郎" required
                       value={form.name}
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
                       className={INPUT_CLS} style={INPUT_STYLE}
                     />
                   </div>
@@ -1066,7 +1071,7 @@ function Contact() {
                     <input
                       id="phone" type="tel" placeholder="090-0000-0000"
                       value={form.phone}
-                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
                       className={INPUT_CLS} style={INPUT_STYLE}
                     />
                   </div>
@@ -1075,7 +1080,7 @@ function Contact() {
                     <input
                       id="email" type="email" placeholder="example@gmail.com"
                       value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
                       className={INPUT_CLS} style={INPUT_STYLE}
                     />
                   </div>
@@ -1131,7 +1136,7 @@ function Contact() {
                     placeholder="ご相談の内容をできるだけ詳しくお書きください。（例：LDKのフローリング張り替えを検討しています。6畳ほどです。）"
                     required
                     value={form.message}
-                    onChange={(e) => setForm({ ...form, message: e.target.value })}
+                    onChange={(e) => setForm((prev) => ({ ...prev, message: e.target.value }))}
                     className={INPUT_CLS}
                     style={{ ...INPUT_STYLE, resize: "vertical" }}
                   />
@@ -1208,7 +1213,13 @@ function Contact() {
 
 function Footer() {
   return (
-    <footer className="py-12 px-6 md:px-12" style={{ background: "#1a1410" }}>
+    <footer
+      className="py-12 px-6 md:px-12"
+      style={{
+        background: "#1a1410",
+        paddingBottom: "max(3rem, calc(3rem + env(safe-area-inset-bottom, 0px)))",
+      }}
+    >
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div>
