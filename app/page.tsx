@@ -566,8 +566,9 @@ function About() {
   return (
     <section id="about" className="py-24 md:py-32" style={{ background: "#f3ede5" }}>
       <div className="max-w-6xl mx-auto px-6 md:px-12">
-        <div className="grid md:grid-cols-2 gap-12 md:gap-20 items-center">
-          <div className="fade-up order-2 md:order-1">
+        <div className="grid md:grid-cols-2 gap-12 md:gap-20 items-start">
+          {/* 写真プレースホルダー */}
+          <div className="fade-up order-2 md:order-1 md:sticky md:top-24">
             <div
               className="aspect-[3/4] rounded-2xl flex flex-col items-center justify-center gap-3"
               style={{ background: "#e8ddd0", border: "1px solid rgba(193,127,36,0.15)" }}
@@ -583,8 +584,11 @@ function About() {
             </div>
           </div>
 
-          <div className="order-1 md:order-2">
-            <div className="fade-up mb-8">
+          {/* テキスト＋資格 */}
+          <div className="order-1 md:order-2 space-y-10">
+
+            {/* プロフィール */}
+            <div className="fade-up">
               <p className="text-[11px] tracking-[0.4em] mb-3 font-jp-sans" style={{ color: "var(--color-primary)" }}>
                 ABOUT
               </p>
@@ -596,20 +600,56 @@ function About() {
                 <br />
                 職人の眼
               </h2>
-              <p className="text-sm leading-[1.9] mb-4 text-stone-500 font-jp-sans">
-                もともとは畳職人として、畳の製作・施工に長年携わってきました。畳製作技能士1級を取得し、素材の目利きと精緻な手仕事を磨いてきた経験が、現在の大工工事にも確かに生きています。
-              </p>
-              <p className="text-sm leading-[1.9] text-stone-500 font-jp-sans">
-                さらに福祉住環境コーディネーター2級を取得。高齢者・障がいのある方が安心して暮らせる住まいづくりにも力を入れています。住む人の立場に立った、きめ細かい提案が強みです。
-              </p>
+              <div className="space-y-4 text-sm leading-[1.95] text-stone-500 font-jp-sans">
+                <p>
+                  もともとは畳職人として、畳の製作・施工に長年携わってきました。畳製作技能士1級を取得し、素材の目利きと精緻な手仕事を磨いてきた経験が、現在の大工工事にも確かに生きています。
+                </p>
+                <p>
+                  畳は、寸法・素材・張り方のわずかなズレが仕上がりに直結します。その繊細な感覚が、フローリングの張り替えや造作工事にも活かされています。「見えないところを丁寧に」が、長年変わらないこだわりです。
+                </p>
+                <p>
+                  また、福祉住環境コーディネーター2級を取得し、高齢者・障がいのある方が安心して暮らせる住まいづくりにも注力。手すりの位置ひとつにも、住む方の動線や体の状態を考慮した提案を心がけています。
+                </p>
+              </div>
             </div>
 
-            <div className="fade-up fade-up-delay-1 grid grid-cols-2 gap-3">
+            {/* 保有資格 */}
+            <div className="fade-up fade-up-delay-1">
+              <p className="text-[10px] tracking-[0.4em] mb-4 font-jp-sans" style={{ color: "var(--color-primary)" }}>
+                QUALIFICATIONS
+              </p>
+              <div className="space-y-3">
+                {CERTS.map((cert) => (
+                  <div
+                    key={cert.name}
+                    className="flex items-start gap-4 p-5 rounded-xl bg-white"
+                    style={{ border: "1px solid rgba(193,127,36,0.15)", borderLeft: "3px solid var(--color-primary)" }}
+                  >
+                    <div
+                      className="shrink-0 w-12 h-12 rounded-full flex items-center justify-center"
+                      style={{ background: "#faf4ea", border: "1px solid rgba(193,127,36,0.2)" }}
+                    >
+                      <span className="font-jp-serif font-bold text-base leading-none" style={{ color: "var(--color-primary)" }}>
+                        {cert.grade}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-[9px] tracking-widest text-stone-400 mb-0.5 font-jp-sans">{cert.note}</p>
+                      <p className="font-jp-serif text-base mb-1" style={{ color: "#1a1410" }}>{cert.name}</p>
+                      <p className="text-xs leading-relaxed text-stone-400 font-jp-sans">{cert.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* スペック */}
+            <div className="fade-up fade-up-delay-2 grid grid-cols-2 gap-3">
               {[
-                { label: "畳製作技能士", value: "1級" },
-                { label: "福祉住環境コーディネーター", value: "2級" },
-                { label: "相談・見積もり", value: "無料" },
+                { label: "相談・現地確認・見積もり", value: "すべて無料" },
                 { label: "対応エリア", value: "河内長野市・南大阪全域" },
+                { label: "受付時間", value: "8:00〜18:00（土日祝可）" },
+                { label: "営業形態", value: "個人事業" },
               ].map((item) => (
                 <div
                   key={item.label}
@@ -617,12 +657,11 @@ function About() {
                   style={{ border: "1px solid rgba(193,127,36,0.12)" }}
                 >
                   <p className="text-[10px] text-stone-400 mb-1 font-jp-sans">{item.label}</p>
-                  <p className="text-sm font-bold font-jp-sans" style={{ color: "#1a1410" }}>
-                    {item.value}
-                  </p>
+                  <p className="text-sm font-bold font-jp-sans" style={{ color: "#1a1410" }}>{item.value}</p>
                 </div>
               ))}
             </div>
+
           </div>
         </div>
       </div>
@@ -817,55 +856,6 @@ function Works() {
                   {w.cat}
                 </p>
                 <p className="text-sm font-jp-sans" style={{ color: "#1a1410" }}>{w.label}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ── 資格 ─────────────────────────────────────────────────────────────────────
-
-function Certifications() {
-  return (
-    <section className="py-24 md:py-28" style={{ background: "#1c1510" }} aria-label="保有資格">
-      <div className="max-w-4xl mx-auto px-6 md:px-12">
-        <div className="text-center mb-14 fade-up">
-          <p className="text-[10px] tracking-[0.45em] mb-3 font-jp-sans" style={{ color: "rgba(193,127,36,0.6)" }}>
-            QUALIFICATIONS
-          </p>
-          <h2 className="font-jp-serif text-white" style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.4rem)" }}>
-            保有資格
-          </h2>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-5">
-          {CERTS.map((cert, i) => (
-            <div
-              key={cert.name}
-              className={`fade-up fade-up-delay-${i + 1} p-7 rounded-2xl transition-all duration-300`}
-              style={{ border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)" }}
-            >
-              <div className="flex items-start gap-5">
-                <div
-                  className="shrink-0 w-14 h-14 rounded-full flex items-center justify-center"
-                  style={{ border: "1.5px solid rgba(193,127,36,0.4)" }}
-                >
-                  <span className="font-jp-serif font-bold text-lg leading-none" style={{ color: "#e8a83a" }}>
-                    {cert.grade}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-[9px] tracking-widest mb-1 font-jp-sans" style={{ color: "rgba(193,127,36,0.5)" }}>
-                    {cert.note}
-                  </p>
-                  <h3 className="text-white font-jp-serif text-lg mb-2">{cert.name}</h3>
-                  <p className="text-xs leading-relaxed font-jp-sans" style={{ color: "rgba(255,255,255,0.35)" }}>
-                    {cert.desc}
-                  </p>
-                </div>
               </div>
             </div>
           ))}
@@ -1202,7 +1192,6 @@ export default function Page() {
         <Services />
         <About />
         <Works />
-        <Certifications />
         <Contact />
       </main>
       <Footer />
