@@ -43,6 +43,13 @@ const WORKS_PLACEHOLDER = [
   { cat: "介護リフォーム", label: "段差解消" },
 ] as const;
 
+const INQUIRY_TYPES = [
+  "大工工事",
+  "畳リフォーム",
+  "介護・バリアフリーリフォーム",
+  "その他",
+] as const;
+
 const CERTS = [
   {
     grade: "1級",
@@ -668,12 +675,56 @@ function Certifications() {
 
 // ── お問い合わせ ──────────────────────────────────────────────────────────────
 
+type FormState = { name: string; phone: string; email: string; message: string };
+type SendStatus = "idle" | "loading" | "success" | "error";
+
+const INPUT_CLS =
+  "w-full px-4 py-3 rounded-xl text-sm font-jp-sans transition-colors bg-white text-[#1a1410] placeholder-stone-300 outline-none";
+const INPUT_STYLE = { border: "1px solid #e8e0d5", fontSize: "14px" };
+const LABEL_CLS = "block text-xs font-jp-sans mb-1.5 text-stone-500";
+
 function Contact() {
+  const [form, setForm] = useState<FormState>({ name: "", phone: "", email: "", message: "" });
+  const [inquiryTypes, setInquiryTypes] = useState<string[]>([]);
+  const [status, setStatus] = useState<SendStatus>("idle");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  function toggleInquiry(type: string) {
+    setInquiryTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+    );
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus("loading");
+    setErrorMsg("");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, inquiryTypes }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (res.ok) {
+        setStatus("success");
+        setForm({ name: "", phone: "", email: "", message: "" });
+        setInquiryTypes([]);
+      } else {
+        setStatus("error");
+        setErrorMsg(data.error ?? "送信に失敗しました");
+      }
+    } catch {
+      setStatus("error");
+      setErrorMsg("通信エラーが発生しました。しばらくしてから再度お試しください。");
+    }
+  }
+
   return (
     <section id="contact" className="py-24 md:py-32" style={{ background: "#faf8f5" }}>
-      <div className="max-w-4xl mx-auto px-6 md:px-12">
+      <div className="max-w-6xl mx-auto px-6 md:px-12">
         {/* ヘッダー */}
-        <div className="text-center mb-16 fade-up">
+        <div className="mb-14 fade-up">
           <p
             className="text-[11px] tracking-[0.4em] mb-3 font-jp-sans"
             style={{ color: "var(--color-primary)" }}
@@ -681,7 +732,7 @@ function Contact() {
             CONTACT
           </p>
           <h2
-            className="font-jp-serif mb-4"
+            className="font-jp-serif mb-3"
             style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", color: "#1a1410" }}
           >
             お問い合わせ
@@ -691,82 +742,237 @@ function Contact() {
           </p>
         </div>
 
-        {/* 連絡先カード */}
-        <div className="grid md:grid-cols-3 gap-5 mb-10">
-          {/* 電話 */}
-          <a
-            href={`tel:${CONTACT.phone}`}
-            className="fade-up p-6 rounded-2xl bg-white flex flex-col items-center gap-3 transition-all duration-300 hover:shadow-lg hover:shadow-amber-50 group"
-            style={{ border: "1px solid #ece6dc" }}
-          >
-            <div
-              className="w-11 h-11 rounded-full flex items-center justify-center transition-colors group-hover:bg-amber-50"
-              style={{ background: "#faf4ea", color: "var(--color-primary)" }}
-            >
-              <IconPhone />
-            </div>
-            <p className="text-[10px] tracking-widest text-stone-400 font-jp-sans">PHONE</p>
-            <p className="font-bold text-sm font-jp-sans" style={{ color: "#1a1410" }}>
-              {CONTACT.phone}
-            </p>
-          </a>
+        <div className="grid md:grid-cols-[1fr_300px] gap-10 md:gap-16 items-start">
+          {/* ── フォーム ── */}
+          <div className="fade-up">
+            {status === "success" ? (
+              /* 送信完了 */
+              <div
+                className="p-10 rounded-2xl text-center"
+                style={{ background: "#f0faf0", border: "1px solid #a8d8a8" }}
+              >
+                <div
+                  className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
+                  style={{ background: "#d4edda" }}
+                >
+                  <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden>
+                    <circle cx="14" cy="14" r="13" stroke="#3d8b3d" strokeWidth="1.5" />
+                    <path d="M8 14 L12 18 L20 10" stroke="#3d8b3d" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <h3 className="font-jp-serif text-xl mb-2" style={{ color: "#2d6a2d" }}>
+                  送信が完了しました
+                </h3>
+                <p className="text-sm text-stone-500 font-jp-sans leading-relaxed">
+                  お問い合わせありがとうございます。
+                  <br />
+                  内容を確認次第、ご連絡いたします。
+                </p>
+                <button
+                  onClick={() => setStatus("idle")}
+                  className="mt-6 text-sm font-jp-sans underline"
+                  style={{ color: "var(--color-primary)" }}
+                >
+                  別のお問い合わせをする
+                </button>
+              </div>
+            ) : (
+              <form
+                onSubmit={handleSubmit}
+                noValidate
+                className="p-8 rounded-2xl bg-white"
+                style={{ border: "1px solid #ece6dc" }}
+              >
+                <div className="grid sm:grid-cols-2 gap-5 mb-5">
+                  {/* お名前 */}
+                  <div className="sm:col-span-2">
+                    <label htmlFor="name" className={LABEL_CLS}>
+                      お名前
+                      <span className="ml-1.5 text-[10px] tracking-wider" style={{ color: "var(--color-primary)" }}>
+                        必須
+                      </span>
+                    </label>
+                    <input
+                      id="name"
+                      type="text"
+                      placeholder="山田 太郎"
+                      required
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      className={INPUT_CLS}
+                      style={INPUT_STYLE}
+                    />
+                  </div>
 
-          {/* メール */}
-          <a
-            href={`mailto:${CONTACT.email}`}
-            className="fade-up fade-up-delay-1 p-6 rounded-2xl bg-white flex flex-col items-center gap-3 transition-all duration-300 hover:shadow-lg hover:shadow-amber-50 group"
-            style={{ border: "1px solid #ece6dc" }}
-          >
-            <div
-              className="w-11 h-11 rounded-full flex items-center justify-center transition-colors group-hover:bg-amber-50"
-              style={{ background: "#faf4ea", color: "var(--color-primary)" }}
-            >
-              <IconMail />
-            </div>
-            <p className="text-[10px] tracking-widest text-stone-400 font-jp-sans">EMAIL</p>
-            <p
-              className="text-sm text-center break-all font-jp-sans"
-              style={{ color: "#1a1410" }}
-            >
-              {CONTACT.email}
-            </p>
-          </a>
+                  {/* 電話 */}
+                  <div>
+                    <label htmlFor="phone" className={LABEL_CLS}>電話番号</label>
+                    <input
+                      id="phone"
+                      type="tel"
+                      placeholder="090-0000-0000"
+                      value={form.phone}
+                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      className={INPUT_CLS}
+                      style={INPUT_STYLE}
+                    />
+                  </div>
 
-          {/* 住所 */}
-          <div
-            className="fade-up fade-up-delay-2 p-6 rounded-2xl bg-white flex flex-col items-center gap-3"
-            style={{ border: "1px solid #ece6dc" }}
-          >
-            <div
-              className="w-11 h-11 rounded-full flex items-center justify-center"
-              style={{ background: "#faf4ea", color: "var(--color-primary)" }}
+                  {/* メール */}
+                  <div>
+                    <label htmlFor="email" className={LABEL_CLS}>メールアドレス</label>
+                    <input
+                      id="email"
+                      type="email"
+                      placeholder="example@gmail.com"
+                      value={form.email}
+                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      className={INPUT_CLS}
+                      style={INPUT_STYLE}
+                    />
+                  </div>
+                </div>
+
+                {/* 相談の種類 */}
+                <div className="mb-5">
+                  <p className={LABEL_CLS}>ご相談の種類（複数選択可）</p>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {INQUIRY_TYPES.map((type) => {
+                      const checked = inquiryTypes.includes(type);
+                      return (
+                        <label
+                          key={type}
+                          className="flex items-center gap-2.5 p-3 rounded-xl cursor-pointer transition-colors font-jp-sans text-sm select-none"
+                          style={{
+                            border: checked ? "1.5px solid rgba(193,127,36,0.6)" : "1px solid #e8e0d5",
+                            background: checked ? "#fdf6ea" : "white",
+                            color: checked ? "#9a6419" : "#5a4a3a",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleInquiry(type)}
+                            className="sr-only"
+                          />
+                          <div
+                            className="w-4 h-4 rounded shrink-0 flex items-center justify-center"
+                            style={{
+                              border: checked ? "none" : "1.5px solid #c8b89a",
+                              background: checked ? "var(--color-primary)" : "transparent",
+                            }}
+                          >
+                            {checked && (
+                              <svg width="10" height="8" viewBox="0 0 10 8" fill="none" aria-hidden>
+                                <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            )}
+                          </div>
+                          {type}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 相談内容 */}
+                <div className="mb-6">
+                  <label htmlFor="message" className={LABEL_CLS}>
+                    ご相談内容
+                    <span className="ml-1.5 text-[10px] tracking-wider" style={{ color: "var(--color-primary)" }}>
+                      必須
+                    </span>
+                  </label>
+                  <textarea
+                    id="message"
+                    rows={5}
+                    placeholder="ご相談の内容をできるだけ詳しくお書きください。（例：LDKのフローリング張り替えを検討しています。6畳ほどです。）"
+                    required
+                    value={form.message}
+                    onChange={(e) => setForm({ ...form, message: e.target.value })}
+                    className={INPUT_CLS}
+                    style={{ ...INPUT_STYLE, resize: "vertical" }}
+                  />
+                </div>
+
+                {/* エラー */}
+                {status === "error" && (
+                  <p className="mb-4 text-sm text-red-600 font-jp-sans">{errorMsg}</p>
+                )}
+
+                {/* 送信ボタン */}
+                <button
+                  type="submit"
+                  disabled={status === "loading"}
+                  className="w-full py-4 rounded-xl text-white font-bold font-jp-sans text-sm transition-opacity"
+                  style={{
+                    background: "var(--color-primary)",
+                    boxShadow: "0 4px 20px rgba(193,127,36,0.28)",
+                    opacity: status === "loading" ? 0.7 : 1,
+                  }}
+                >
+                  {status === "loading" ? "送信中..." : "送信する →"}
+                </button>
+              </form>
+            )}
+          </div>
+
+          {/* ── 直接連絡先 ── */}
+          <div className="fade-up fade-up-delay-1 space-y-5">
+            <p className="text-xs tracking-widest text-stone-400 font-jp-sans mb-6">DIRECT CONTACT</p>
+
+            {/* 電話 */}
+            <a
+              href={`tel:${CONTACT.phone}`}
+              className="block p-5 rounded-2xl bg-white transition-all hover:shadow-md group"
+              style={{ border: "1px solid #ece6dc" }}
             >
-              <IconPin />
+              <div className="flex items-center gap-3 mb-2">
+                <div style={{ color: "var(--color-primary)" }}><IconPhone /></div>
+                <p className="text-[10px] tracking-widest text-stone-400 font-jp-sans">PHONE</p>
+              </div>
+              <p className="font-bold text-base font-jp-sans" style={{ color: "#1a1410" }}>
+                {CONTACT.phone}
+              </p>
+              <p className="text-xs text-stone-400 mt-1 font-jp-sans">
+                8:00〜18:00（土日祝も対応可）
+              </p>
+            </a>
+
+            {/* メール */}
+            <a
+              href={`mailto:${CONTACT.email}`}
+              className="block p-5 rounded-2xl bg-white transition-all hover:shadow-md"
+              style={{ border: "1px solid #ece6dc" }}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div style={{ color: "var(--color-primary)" }}><IconMail /></div>
+                <p className="text-[10px] tracking-widest text-stone-400 font-jp-sans">EMAIL</p>
+              </div>
+              <p className="text-sm font-jp-sans break-all" style={{ color: "#1a1410" }}>
+                {CONTACT.email}
+              </p>
+            </a>
+
+            {/* 住所 */}
+            <div
+              className="p-5 rounded-2xl bg-white"
+              style={{ border: "1px solid #ece6dc" }}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div style={{ color: "var(--color-primary)" }}><IconPin /></div>
+                <p className="text-[10px] tracking-widest text-stone-400 font-jp-sans">ADDRESS</p>
+              </div>
+              <p className="text-sm leading-relaxed font-jp-sans" style={{ color: "#1a1410" }}>
+                {CONTACT.address}
+              </p>
             </div>
-            <p className="text-[10px] tracking-widest text-stone-400 font-jp-sans">ADDRESS</p>
-            <p className="text-sm text-center leading-relaxed font-jp-sans" style={{ color: "#1a1410" }}>
-              {CONTACT.address}
+
+            {/* 備考 */}
+            <p className="text-xs leading-relaxed text-stone-400 font-jp-sans px-1">
+              相談・現地確認・見積もりはすべて無料です。河内長野市を中心に南大阪全域に対応しています。
             </p>
           </div>
-        </div>
-
-        {/* 電話CTA */}
-        <div className="fade-up fade-up-delay-3 text-center">
-          <a
-            href={`tel:${CONTACT.phone}`}
-            className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl text-white font-bold transition-colors"
-            style={{
-              background: "var(--color-primary)",
-              boxShadow: "0 4px 24px rgba(193,127,36,0.3)",
-              fontSize: "1.1rem",
-            }}
-          >
-            <IconPhone />
-            {CONTACT.phone}
-          </a>
-          <p className="text-xs text-stone-400 mt-3 font-jp-sans">
-            受付時間：8:00〜18:00（土日祝も対応可）
-          </p>
         </div>
       </div>
     </section>
