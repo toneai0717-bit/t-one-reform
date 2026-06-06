@@ -58,8 +58,8 @@ const CERTS = [
 
 // Hero ビフォーアフター写真
 const HERO_REVEAL = {
-  before: "/images/Barhroom-before_image2.jpeg",
-  after:  "/images/Barhroom-after_image1.jpeg",
+  before: "/images/Japanese-room-before.jpg",
+  after:  "/images/Japanese-room-after.jpg",
 } as const;
 
 // 施工事例：ビフォーアフターペア
