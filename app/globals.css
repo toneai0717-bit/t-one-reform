@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+:root {
+  --font-sans: var(--font-noto-sans), sans-serif;
+  --font-serif: var(--font-noto-serif), ui-serif, Georgia, serif;
+  --color-primary: #c17f24;
+  --color-primary-dark: #9a6419;
+}
+
+/* サンセリフ / セリフ フォントクラス */
+.font-jp-sans  { font-family: var(--font-sans); }
+.font-jp-serif { font-family: var(--font-serif); }
+
+/* スクロールアニメーション */
+.fade-up {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+.fade-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.fade-up-delay-1 { transition-delay: 0.1s; }
+.fade-up-delay-2 { transition-delay: 0.2s; }
+.fade-up-delay-3 { transition-delay: 0.3s; }
+
+/* ヒーローコピーアニメ */
+@keyframes heroRise {
+  from { opacity: 0; transform: translateY(24px); filter: blur(4px); }
+  to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
+}
+.hero-rise {
+  opacity: 0;
+  animation: heroRise 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-rise { animation: none; opacity: 1; }
+  .fade-up   { transition: none; }
+}
+
+/* ヘッダー影 */
+.header-shadow { box-shadow: 0 2px 20px rgba(0,0,0,0.09); }
+
+/* iOSフォームズーム防止 */
+input, textarea, select { font-size: 16px !important; }
+body { -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: smooth; }
