@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 // ── 定数 ─────────────────────────────────────────────────────────────────────
 
@@ -34,15 +34,6 @@ const SERVICES = [
   },
 ] as const;
 
-const WORKS_PLACEHOLDER = [
-  { cat: "大工工事", label: "床の張り替え" },
-  { cat: "大工工事", label: "内装仕上げ" },
-  { cat: "畳リフォーム", label: "畳の新調" },
-  { cat: "畳リフォーム", label: "縁なし畳（琉球畳）" },
-  { cat: "介護リフォーム", label: "手すり設置" },
-  { cat: "介護リフォーム", label: "段差解消" },
-] as const;
-
 const INQUIRY_TYPES = [
   "大工工事",
   "畳リフォーム",
@@ -63,6 +54,51 @@ const CERTS = [
     note: "東京商工会議所",
     desc: "高齢者・障がいのある方が安心して暮らせる住環境整備の専門資格。住む方の状況を丁寧にヒアリングし、最適な改修プランを提案します。",
   },
+] as const;
+
+// Hero ビフォーアフター写真
+const HERO_REVEAL = {
+  before: "/images/Barhroom-before_image1.jpeg",
+  after:  "/images/Barhroom-after_image1.jpeg",
+} as const;
+
+// 施工事例：ビフォーアフターペア
+const BEFORE_AFTER_WORKS = [
+  {
+    id: "bathroom-1",
+    cat: "水回り改修",
+    label: "バスルーム改修",
+    before: "/images/Barhroom-before_image1.jpeg",
+    after:  "/images/Barhroom-after_image1.jpeg",
+  },
+  {
+    id: "bathroom-2",
+    cat: "水回り改修",
+    label: "バスルーム改修",
+    before: "/images/Barhroom-before_image2.jpeg",
+    after:  "/images/Barhroom-after_image2.jpeg",
+  },
+  {
+    id: "washroom",
+    cat: "水回り改修",
+    label: "洗面所改修",
+    before: "/images/washroom-before_image1.jpg",
+    after:  "/images/washroom-after_image1.jpg",
+  },
+  {
+    id: "window",
+    cat: "大工工事 / 建具",
+    label: "窓・建具改修",
+    before: "/images/window-before.JPG",
+    after:  "/images/window-after.JPG",
+  },
+] as const;
+
+// 施工事例：単体写真
+const SINGLE_WORKS = [
+  { id: "shop",    cat: "大工工事",               label: "店舗新築工事",       src: "/images/Shop-making.JPG" },
+  { id: "kitchen", cat: "大工工事 / 内装",        label: "キッチン工事",       src: "/images/kitchen.JPG" },
+  { id: "fence",   cat: "大工工事 / エクステリア", label: "ウッドフェンス設置", src: "/images/wood-fence.JPG" },
 ] as const;
 
 // ── SVGアイコン ───────────────────────────────────────────────────────────────
@@ -131,12 +167,27 @@ function IconPin() {
 
 // ── フック ────────────────────────────────────────────────────────────────────
 
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const fn = () => setReduced(mq.matches);
+    fn();
+    mq.addEventListener("change", fn);
+    return () => mq.removeEventListener("change", fn);
+  }, []);
+  return reduced;
+}
+
 function useHeaderScroll() {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const fn = () => {
       const hero = document.getElementById("hero");
-      const threshold = hero ? hero.offsetHeight * 0.85 : window.innerHeight * 0.85;
+      // Hero が 240vh のスクロールトラックなので、sticky が終わる手前で切り替え
+      const threshold = hero
+        ? hero.offsetHeight - window.innerHeight - 8
+        : 60;
       setScrolled(window.scrollY > threshold);
     };
     fn();
@@ -164,12 +215,18 @@ function Header({ scrolled }: { scrolled: boolean }) {
       <div className="max-w-6xl mx-auto px-6 md:px-12 flex items-center justify-between h-16">
         {/* ロゴ */}
         <a href="#" className="flex items-center gap-3">
-          <div className="w-6 h-6 relative">
-            <div className="absolute inset-0 border-2 border-current rotate-45" style={{ borderColor: "var(--color-primary)" }} />
-            <div className="absolute inset-1 border border-current rotate-45" style={{ borderColor: "var(--color-primary)", opacity: 0.5 }} />
+          <div className="w-6 h-6 relative shrink-0">
+            <div
+              className="absolute inset-0 border-2 rotate-45"
+              style={{ borderColor: "var(--color-primary)" }}
+            />
+            <div
+              className="absolute inset-1 border rotate-45"
+              style={{ borderColor: "var(--color-primary)", opacity: 0.5 }}
+            />
           </div>
           <span
-            className="text-sm font-bold tracking-[0.08em]"
+            className="text-sm font-bold tracking-[0.08em] transition-colors"
             style={{ color: scrolled ? "#1a1410" : "white" }}
           >
             t-one reform
@@ -180,9 +237,9 @@ function Header({ scrolled }: { scrolled: boolean }) {
         <nav className="hidden md:flex items-center gap-8" aria-label="メインナビゲーション">
           {[
             { href: "#services", label: "サービス" },
-            { href: "#works", label: "施工事例" },
-            { href: "#about", label: "職人紹介" },
-            { href: "#contact", label: "お問い合わせ" },
+            { href: "#works",    label: "施工事例" },
+            { href: "#about",    label: "職人紹介" },
+            { href: "#contact",  label: "お問い合わせ" },
           ].map(({ href, label }) => (
             <a
               key={href}
@@ -195,11 +252,8 @@ function Header({ scrolled }: { scrolled: boolean }) {
           ))}
           <a
             href={`tel:${CONTACT.phone}`}
-            className="px-5 py-2 rounded text-sm font-bold transition-colors"
-            style={{
-              background: "var(--color-primary)",
-              color: "white",
-            }}
+            className="px-5 py-2 rounded text-sm font-bold text-white transition-opacity hover:opacity-80"
+            style={{ background: "var(--color-primary)" }}
           >
             {CONTACT.phone}
           </a>
@@ -223,152 +277,215 @@ function Header({ scrolled }: { scrolled: boolean }) {
         </button>
       </div>
 
-      {/* SPメニュー */}
+      {/* SP ドロワー */}
       {menuOpen && (
         <div className="md:hidden bg-white border-t border-stone-100">
-          <nav className="flex flex-col">
-            {[
-              { href: "#services", label: "サービス" },
-              { href: "#works", label: "施工事例" },
-              { href: "#about", label: "職人紹介" },
-              { href: "#contact", label: "お問い合わせ" },
-            ].map(({ href, label }) => (
-              <a
-                key={href}
-                href={href}
-                className="px-6 py-4 text-sm text-stone-600 border-b border-stone-50"
-                onClick={() => setMenuOpen(false)}
-              >
-                {label}
-              </a>
-            ))}
+          {[
+            { href: "#services", label: "サービス" },
+            { href: "#works",    label: "施工事例" },
+            { href: "#about",    label: "職人紹介" },
+            { href: "#contact",  label: "お問い合わせ" },
+          ].map(({ href, label }) => (
             <a
-              href={`tel:${CONTACT.phone}`}
-              className="px-6 py-4 text-sm font-bold"
-              style={{ color: "var(--color-primary)" }}
+              key={href}
+              href={href}
+              className="block px-6 py-4 text-sm text-stone-600 border-b border-stone-50"
+              onClick={() => setMenuOpen(false)}
             >
-              {CONTACT.phone}
+              {label}
             </a>
-          </nav>
+          ))}
+          <a
+            href={`tel:${CONTACT.phone}`}
+            className="block px-6 py-4 text-sm font-bold"
+            style={{ color: "var(--color-primary)" }}
+          >
+            {CONTACT.phone}
+          </a>
         </div>
       )}
     </header>
   );
 }
 
-// ── ヒーロー ──────────────────────────────────────────────────────────────────
+// ── Hero: スクロール連動ビフォーアフター ─────────────────────────────────────
 
-function Hero() {
-  // 畳の目を模した背景パターン
-  const tatamiPattern = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect x='1' y='1' width='78' height='78' fill='none' stroke='rgba(255,255,255,0.04)' stroke-width='1'/%3E%3Cline x1='1' y1='40' x2='79' y2='40' stroke='rgba(255,255,255,0.04)' stroke-width='1'/%3E%3C/svg%3E")`;
+function ScrollRevealHero() {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [progress, setProgress] = useState(0);
+  const reduced = usePrefersReducedMotion();
+
+  useEffect(() => {
+    if (reduced) { setProgress(1); return; }
+    const track = trackRef.current;
+    if (!track) return;
+    let raf = 0;
+    const update = () => {
+      const total = track.offsetHeight - window.innerHeight;
+      const scrolled = Math.min(Math.max(-track.getBoundingClientRect().top, 0), total || 1);
+      setProgress(total > 0 ? scrolled / total : 0);
+    };
+    const onScroll = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(update); };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, [reduced]);
+
+  const p = progress;
 
   return (
     <section
+      ref={trackRef}
       id="hero"
-      className="relative min-h-screen flex items-center overflow-hidden"
-      style={{ background: "#1c1510" }}
-      aria-label="t-one reform ヒーロー"
+      className="relative h-[240vh]"
+      aria-label="施工事例 ビフォーアフター"
     >
-      {/* 畳目パターン背景 */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ backgroundImage: tatamiPattern, backgroundSize: "80px 80px" }}
-        aria-hidden
-      />
+      <div className="sticky top-0 h-[100dvh] min-h-[600px] overflow-hidden">
 
-      {/* 左辺アクセントライン */}
-      <div
-        className="absolute top-0 bottom-0 left-0 w-[3px] pointer-events-none"
-        style={{
-          background: "linear-gradient(to bottom, transparent 0%, rgba(193,127,36,0.6) 30%, rgba(193,127,36,0.6) 70%, transparent 100%)",
-        }}
-        aria-hidden
-      />
+        {/* 画像レイヤー（ズームアニメ付き） */}
+        <div
+          className="absolute inset-0"
+          style={{
+            transform: `scale(${1.06 - p * 0.06})`,
+            transformOrigin: "center",
+            filter: "brightness(1.1) saturate(1.05) contrast(1.02)",
+          }}
+        >
+          {/* After（ベース） */}
+          <img
+            src={HERO_REVEAL.after}
+            alt="施工後のバスルーム"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Before（左からワイプ） */}
+          <img
+            src={HERO_REVEAL.before}
+            alt="施工前のバスルーム"
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ clipPath: `inset(0 0 0 ${p * 100}%)` }}
+          />
+        </div>
 
-      {/* 下部グラデーション */}
-      <div
-        className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
-        style={{ background: "linear-gradient(to top, rgba(15,10,6,0.6), transparent)" }}
-        aria-hidden
-      />
+        {/* ワイプ境界の光 */}
+        <div
+          className="absolute top-0 bottom-0 z-10 pointer-events-none"
+          style={{
+            left: `${p * 100}%`,
+            width: "200px",
+            transform: "translateX(-50%)",
+            opacity: p > 0.012 && p < 0.985 ? 1 : 0,
+            background:
+              "linear-gradient(to right, transparent 0%, rgba(255,240,205,0) 30%, rgba(255,246,220,0.55) 50%, rgba(255,240,205,0) 70%, transparent 100%)",
+            mixBlendMode: "screen",
+          }}
+          aria-hidden
+        />
+        <div
+          className="absolute top-0 bottom-0 w-[2px] z-10 pointer-events-none"
+          style={{
+            left: `${p * 100}%`,
+            transform: "translateX(-50%)",
+            opacity: p > 0.012 && p < 0.985 ? 1 : 0,
+            background:
+              "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,250,236,0.95) 50%, rgba(255,255,255,0) 100%)",
+            boxShadow: "0 0 18px 2px rgba(255,238,200,0.55)",
+          }}
+          aria-hidden
+        />
 
-      {/* コンテンツ */}
-      <div className="relative z-10 w-full px-8 md:px-20 py-32">
-        <div className="max-w-3xl">
+        {/* グラデーション（左側暗め） */}
+        <div
+          className="absolute inset-0 z-10 pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(to right, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 40%, transparent 100%)",
+          }}
+          aria-hidden
+        />
+
+        {/* ビネット */}
+        <div
+          className="absolute inset-0 z-10 pointer-events-none"
+          style={{ boxShadow: "inset 0 0 180px 40px rgba(0,0,0,0.45)" }}
+          aria-hidden
+        />
+
+        {/* フィルムグレイン */}
+        <div
+          className="absolute inset-0 z-10 pointer-events-none"
+          style={{
+            mixBlendMode: "overlay",
+            opacity: 0.08,
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+            backgroundSize: "160px 160px",
+          }}
+          aria-hidden
+        />
+
+        {/* コピー */}
+        <div className="absolute inset-0 z-20 flex flex-col justify-center px-8 md:px-20 max-w-3xl">
           <p
-            className="hero-rise text-[11px] tracking-[0.45em] mb-6 font-jp-sans"
-            style={{ color: "rgba(193,127,36,0.8)", animationDelay: "0.1s" }}
+            className="hero-rise text-amber-400 text-xs md:text-sm font-bold tracking-[0.3em] mb-5 uppercase font-jp-sans"
+            style={{ animationDelay: "0.05s" }}
           >
             T-ONE REFORM ── 河内長野の職人
           </p>
-
           <h1
-            className="hero-rise text-white leading-[1.25] mb-6 font-jp-serif"
+            className="hero-rise font-jp-serif text-white leading-tight mb-4"
             style={{
-              fontSize: "clamp(2.4rem, 6vw, 5.2rem)",
-              textShadow: "0 2px 40px rgba(0,0,0,0.6)",
-              animationDelay: "0.22s",
+              fontSize: "clamp(2rem, 5.5vw, 4rem)",
+              textShadow: "0 2px 32px rgba(0,0,0,0.6)",
+              animationDelay: "0.18s",
             }}
           >
             畳職人の精度で、
             <br />
-            <span style={{ color: "#e8a83a" }}>暮らし</span>を整える。
+            暮らしを整える。
           </h1>
-
           <p
-            className="hero-rise text-sm md:text-base leading-[1.9] mb-10 font-jp-sans"
-            style={{ color: "rgba(255,255,255,0.55)", animationDelay: "0.36s", maxWidth: "36rem" }}
+            className="hero-rise text-white/70 text-sm md:text-base mb-8 leading-relaxed max-w-md font-jp-sans"
+            style={{ animationDelay: "0.32s" }}
           >
-            大工工事・畳リフォーム・介護バリアフリー。
+            大工工事・畳リフォーム・介護バリアフリー
             <br />
-            元畳職人の技術と経験で、あなたの住まいに
-            <br />
-            真摯に向き合います。
+            河内長野で、住まいに向き合います。
           </p>
-
           <div
             className="hero-rise flex flex-col sm:flex-row gap-3"
-            style={{ animationDelay: "0.5s" }}
+            style={{ animationDelay: "0.46s" }}
           >
             <a
               href="#contact"
-              className="px-8 py-4 text-sm font-bold rounded tracking-wide text-white transition-colors"
-              style={{
-                background: "var(--color-primary)",
-                boxShadow: "0 4px 24px rgba(193,127,36,0.35)",
-              }}
+              className="px-8 py-4 bg-amber-500 hover:bg-amber-400 text-white font-bold rounded transition-colors shadow-lg text-sm tracking-wide font-jp-sans"
             >
-              相談・見積もり（無料）
+              無料相談・見積もりはこちら
             </a>
             <a
               href="#services"
-              className="px-8 py-4 text-sm rounded text-white transition-colors"
-              style={{ border: "1px solid rgba(255,255,255,0.25)", color: "rgba(255,255,255,0.7)" }}
+              className="px-8 py-4 border-2 border-white/70 text-white font-bold rounded hover:bg-white hover:text-stone-800 transition-colors text-sm backdrop-blur-sm font-jp-sans"
             >
               サービスを見る
             </a>
           </div>
-
-          {/* スクロールヒント */}
-          <div
-            className="hero-rise mt-16 flex items-center gap-3"
-            style={{ animationDelay: "0.7s" }}
-          >
-            <div className="w-8 h-px" style={{ background: "rgba(255,255,255,0.2)" }} />
-            <span className="text-[10px] tracking-[0.4em] font-jp-sans" style={{ color: "rgba(255,255,255,0.25)" }}>
-              SCROLL
-            </span>
-          </div>
         </div>
 
-        {/* 右下 エリア表示 */}
-        <div className="absolute bottom-8 right-8 text-right hidden md:block" aria-hidden>
-          <p className="text-[10px] tracking-[0.3em]" style={{ color: "rgba(255,255,255,0.15)" }}>
-            KAWACHINAGANO
-          </p>
-          <p className="text-[10px] tracking-[0.3em]" style={{ color: "rgba(255,255,255,0.15)" }}>
-            OSAKA
-          </p>
+        {/* スクロールヒント */}
+        <div
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 pointer-events-none"
+          style={{ opacity: Math.max(0, 1 - p * 4) }}
+          aria-hidden
+        >
+          <span className="text-white/60 text-xs font-jp-sans">スクロールでビフォーアフター</span>
+          <svg width="16" height="24" viewBox="0 0 16 24" fill="none" className="animate-bounce">
+            <rect x="1" y="1" width="14" height="22" rx="7" stroke="white" strokeOpacity="0.5" strokeWidth="1.5" />
+            <circle cx="8" cy="7" r="2" fill="white" />
+          </svg>
         </div>
       </div>
     </section>
@@ -378,9 +495,9 @@ function Hero() {
 // ── サービス ──────────────────────────────────────────────────────────────────
 
 const SERVICE_ICONS = {
-  daiku: <IconCarpentry />,
+  daiku:  <IconCarpentry />,
   tatami: <IconTatami />,
-  kaigo: <IconCare />,
+  kaigo:  <IconCare />,
 };
 
 function Services() {
@@ -391,50 +508,29 @@ function Services() {
           <p className="text-[11px] tracking-[0.4em] mb-3 font-jp-sans" style={{ color: "var(--color-primary)" }}>
             SERVICES
           </p>
-          <h2
-            className="font-jp-serif leading-tight"
-            style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", color: "#1a1410" }}
-          >
+          <h2 className="font-jp-serif leading-tight" style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", color: "#1a1410" }}>
             できること
           </h2>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
           {SERVICES.map((s, i) => (
-            <div
-              key={s.id}
-              className={`fade-up fade-up-delay-${i + 1} group`}
-            >
+            <div key={s.id} className={`fade-up fade-up-delay-${i + 1}`}>
               <div className="h-full p-8 bg-white rounded-2xl border border-stone-100 transition-all duration-300 hover:border-amber-200 hover:shadow-lg hover:shadow-amber-50">
-                {/* アイコン */}
                 <div className="mb-5" style={{ color: "var(--color-primary)" }}>
                   {SERVICE_ICONS[s.id as keyof typeof SERVICE_ICONS]}
                 </div>
-
-                <p
-                  className="text-[10px] tracking-[0.35em] mb-1.5 font-jp-sans"
-                  style={{ color: "rgba(193,127,36,0.55)" }}
-                >
+                <p className="text-[10px] tracking-[0.35em] mb-1.5 font-jp-sans" style={{ color: "rgba(193,127,36,0.55)" }}>
                   {s.subtitle}
                 </p>
-                <h3
-                  className="font-jp-serif text-xl mb-3"
-                  style={{ color: "#1a1410" }}
-                >
+                <h3 className="font-jp-serif text-xl mb-3" style={{ color: "#1a1410" }}>
                   {s.title}
                 </h3>
-                <p className="text-sm leading-relaxed mb-5 text-stone-500 font-jp-sans">
-                  {s.desc}
-                </p>
-
-                {/* 詳細リスト */}
+                <p className="text-sm leading-relaxed mb-5 text-stone-500 font-jp-sans">{s.desc}</p>
                 <ul className="space-y-2">
                   {s.details.map((d) => (
                     <li key={d} className="flex items-center gap-2.5 text-sm text-stone-600 font-jp-sans">
-                      <div
-                        className="w-1 h-1 rounded-full shrink-0"
-                        style={{ background: "var(--color-primary)" }}
-                      />
+                      <div className="w-1 h-1 rounded-full shrink-0" style={{ background: "var(--color-primary)" }} />
                       {d}
                     </li>
                   ))}
@@ -444,7 +540,6 @@ function Services() {
           ))}
         </div>
 
-        {/* CTAバナー */}
         <div
           className="fade-up fade-up-delay-3 mt-12 p-6 md:p-8 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4"
           style={{ background: "#1c1510" }}
@@ -454,7 +549,7 @@ function Services() {
           </p>
           <a
             href="#contact"
-            className="shrink-0 px-7 py-3 rounded text-sm font-bold text-white transition-colors whitespace-nowrap"
+            className="shrink-0 px-7 py-3 rounded text-sm font-bold text-white transition-opacity hover:opacity-80 whitespace-nowrap font-jp-sans"
             style={{ background: "var(--color-primary)" }}
           >
             無料相談はこちら
@@ -472,7 +567,6 @@ function About() {
     <section id="about" className="py-24 md:py-32" style={{ background: "#f3ede5" }}>
       <div className="max-w-6xl mx-auto px-6 md:px-12">
         <div className="grid md:grid-cols-2 gap-12 md:gap-20 items-center">
-          {/* フォトプレースホルダー */}
           <div className="fade-up order-2 md:order-1">
             <div
               className="aspect-[3/4] rounded-2xl flex flex-col items-center justify-center gap-3"
@@ -483,29 +577,23 @@ function About() {
                 <circle cx="24" cy="20" r="6" stroke="rgba(193,127,36,0.3)" strokeWidth="2" />
                 <path d="M8 42 Q24 30 40 42" stroke="rgba(193,127,36,0.3)" strokeWidth="2" fill="none" />
               </svg>
-              <span
-                className="text-xs tracking-widest font-jp-sans"
-                style={{ color: "rgba(193,127,36,0.4)" }}
-              >
+              <span className="text-xs tracking-widest font-jp-sans" style={{ color: "rgba(193,127,36,0.4)" }}>
                 PHOTO COMING SOON
               </span>
             </div>
           </div>
 
-          {/* テキスト */}
           <div className="order-1 md:order-2">
             <div className="fade-up mb-8">
-              <p
-                className="text-[11px] tracking-[0.4em] mb-3 font-jp-sans"
-                style={{ color: "var(--color-primary)" }}
-              >
+              <p className="text-[11px] tracking-[0.4em] mb-3 font-jp-sans" style={{ color: "var(--color-primary)" }}>
                 ABOUT
               </p>
               <h2
                 className="font-jp-serif leading-tight mb-6"
                 style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.6rem)", color: "#1a1410" }}
               >
-                素材と向き合う、<br />
+                素材と向き合う、
+                <br />
                 職人の眼
               </h2>
               <p className="text-sm leading-[1.9] mb-4 text-stone-500 font-jp-sans">
@@ -516,7 +604,6 @@ function About() {
               </p>
             </div>
 
-            {/* スペック */}
             <div className="fade-up fade-up-delay-1 grid grid-cols-2 gap-3">
               {[
                 { label: "畳製作技能士", value: "1級" },
@@ -543,55 +630,193 @@ function About() {
   );
 }
 
+// ── ビフォーアフタースライダー ────────────────────────────────────────────────
+
+function BeforeAfterSlider({
+  before,
+  after,
+  label,
+  cat,
+}: {
+  before: string;
+  after: string;
+  label: string;
+  cat: string;
+}) {
+  const [pos, setPos] = useState(50);
+  const dragging = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const move = useCallback((clientX: number) => {
+    const el = containerRef.current;
+    if (!el) return;
+    const { left, width } = el.getBoundingClientRect();
+    setPos(Math.min(Math.max(((clientX - left) / width) * 100, 0), 100));
+  }, []);
+
+  // マウスドラッグ
+  useEffect(() => {
+    const onUp   = () => { dragging.current = false; };
+    const onMove = (e: MouseEvent) => { if (dragging.current) move(e.clientX); };
+    window.addEventListener("mouseup",   onUp);
+    window.addEventListener("mousemove", onMove);
+    return () => {
+      window.removeEventListener("mouseup",   onUp);
+      window.removeEventListener("mousemove", onMove);
+    };
+  }, [move]);
+
+  // タッチ（passive: false でスクロール抑制）
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+      move(e.touches[0].clientX);
+    };
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    return () => el.removeEventListener("touchmove", onTouchMove);
+  }, [move]);
+
+  return (
+    <div>
+      <div
+        ref={containerRef}
+        className="relative aspect-[4/3] overflow-hidden rounded-2xl select-none"
+        style={{ cursor: "col-resize" }}
+        onMouseDown={(e) => { dragging.current = true; move(e.clientX); }}
+        onTouchStart={(e) => move(e.touches[0].clientX)}
+        role="img"
+        aria-label={`${label} ビフォーアフター比較（左右にドラッグ）`}
+      >
+        {/* After（ベース） */}
+        <img
+          src={after}
+          alt={`${label} 施工後`}
+          className="absolute inset-0 w-full h-full object-cover"
+          draggable={false}
+        />
+        {/* Before（右からクリップ） */}
+        <img
+          src={before}
+          alt={`${label} 施工前`}
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
+          draggable={false}
+        />
+
+        {/* 分割ライン */}
+        <div
+          className="absolute top-0 bottom-0 z-20 pointer-events-none"
+          style={{ left: `${pos}%`, transform: "translateX(-50%)" }}
+          aria-hidden
+        >
+          <div
+            className="absolute top-0 bottom-0"
+            style={{
+              left: "50%",
+              width: "2px",
+              transform: "translateX(-50%)",
+              background: "rgba(255,255,255,0.9)",
+              boxShadow: "0 0 8px rgba(0,0,0,0.3)",
+            }}
+          />
+          {/* ハンドル */}
+          <div
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white flex items-center justify-center"
+            style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.25)" }}
+          >
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
+              <path d="M8 5L3 11L8 17" stroke="#5a4a3a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M14 5L19 11L14 17" stroke="#5a4a3a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+        </div>
+
+        {/* BEFORE ラベル */}
+        <div
+          className="absolute top-3 left-3 z-10 px-2 py-1 text-[10px] tracking-widest text-white font-jp-sans rounded transition-opacity"
+          style={{
+            background: "rgba(0,0,0,0.5)",
+            opacity: pos > 12 ? 1 : 0,
+          }}
+          aria-hidden
+        >
+          BEFORE
+        </div>
+        {/* AFTER ラベル */}
+        <div
+          className="absolute top-3 right-3 z-10 px-2 py-1 text-[10px] tracking-widest text-white font-jp-sans rounded transition-opacity"
+          style={{
+            background: "rgba(193,127,36,0.75)",
+            opacity: pos < 88 ? 1 : 0,
+          }}
+          aria-hidden
+        >
+          AFTER
+        </div>
+      </div>
+
+      {/* キャプション */}
+      <div className="mt-3 px-1">
+        <p className="text-[10px] tracking-widest font-jp-sans" style={{ color: "rgba(193,127,36,0.7)" }}>
+          {cat}
+        </p>
+        <p className="text-sm font-jp-sans" style={{ color: "#1a1410" }}>{label}</p>
+      </div>
+    </div>
+  );
+}
+
 // ── 施工事例 ──────────────────────────────────────────────────────────────────
 
 function Works() {
   return (
     <section id="works" className="py-24 md:py-32" style={{ background: "#faf8f5" }}>
       <div className="max-w-6xl mx-auto px-6 md:px-12">
-        <div className="mb-16 fade-up flex items-end justify-between gap-4">
-          <div>
-            <p
-              className="text-[11px] tracking-[0.4em] mb-3 font-jp-sans"
-              style={{ color: "var(--color-primary)" }}
-            >
-              WORKS
-            </p>
-            <h2
-              className="font-jp-serif"
-              style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", color: "#1a1410" }}
-            >
-              施工事例
-            </h2>
-          </div>
-          <p className="text-xs text-stone-400 mb-2 font-jp-sans">※ 写真は順次追加予定です</p>
+        <div className="mb-16 fade-up">
+          <p className="text-[11px] tracking-[0.4em] mb-3 font-jp-sans" style={{ color: "var(--color-primary)" }}>
+            WORKS
+          </p>
+          <h2 className="font-jp-serif mb-2" style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", color: "#1a1410" }}>
+            施工事例
+          </h2>
+          <p className="text-sm text-stone-400 font-jp-sans">
+            ドラッグ（スワイプ）してビフォーアフターを確認できます
+          </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {WORKS_PLACEHOLDER.map((w, i) => (
-            <div key={i} className={`fade-up fade-up-delay-${Math.min(i % 3, 3)}`}>
-              <div
-                className="aspect-square rounded-xl flex flex-col items-center justify-center gap-2 transition-all duration-300 hover:border-amber-300"
-                style={{ background: "white", border: "1px solid #e8e0d5" }}
-              >
-                {/* プレースホルダーアイコン */}
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center"
-                  style={{ background: "#faf4ea" }}
-                >
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
-                    <rect x="1.5" y="3" width="15" height="12" rx="2" stroke="rgba(193,127,36,0.4)" strokeWidth="1.5" />
-                    <circle cx="9" cy="8" r="2.5" stroke="rgba(193,127,36,0.4)" strokeWidth="1.5" />
-                    <path d="M1.5 14 Q9 10 16.5 14" stroke="rgba(193,127,36,0.4)" strokeWidth="1.5" fill="none" />
-                  </svg>
-                </div>
-                <p
-                  className="text-[9px] tracking-widest font-jp-sans"
-                  style={{ color: "rgba(193,127,36,0.6)" }}
-                >
+        {/* ビフォーアフタースライダー */}
+        <div className="grid md:grid-cols-2 gap-8 mb-14">
+          {BEFORE_AFTER_WORKS.map((w, i) => (
+            <div key={w.id} className={`fade-up fade-up-delay-${i % 2}`}>
+              <BeforeAfterSlider
+                before={w.before}
+                after={w.after}
+                label={w.label}
+                cat={w.cat}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* 単体写真 */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
+          {SINGLE_WORKS.map((w, i) => (
+            <div key={w.id} className={`fade-up fade-up-delay-${i % 3}`}>
+              <div className="rounded-2xl overflow-hidden">
+                <img
+                  src={w.src}
+                  alt={w.label}
+                  className="w-full aspect-[4/3] object-cover"
+                  loading="lazy"
+                />
+              </div>
+              <div className="mt-3 px-1">
+                <p className="text-[10px] tracking-widest font-jp-sans" style={{ color: "rgba(193,127,36,0.7)" }}>
                   {w.cat}
                 </p>
-                <p className="text-xs text-stone-400 font-jp-sans">{w.label}</p>
+                <p className="text-sm font-jp-sans" style={{ color: "#1a1410" }}>{w.label}</p>
               </div>
             </div>
           ))}
@@ -605,23 +830,13 @@ function Works() {
 
 function Certifications() {
   return (
-    <section
-      className="py-24 md:py-28"
-      style={{ background: "#1c1510" }}
-      aria-label="保有資格"
-    >
+    <section className="py-24 md:py-28" style={{ background: "#1c1510" }} aria-label="保有資格">
       <div className="max-w-4xl mx-auto px-6 md:px-12">
         <div className="text-center mb-14 fade-up">
-          <p
-            className="text-[10px] tracking-[0.45em] mb-3 font-jp-sans"
-            style={{ color: "rgba(193,127,36,0.6)" }}
-          >
+          <p className="text-[10px] tracking-[0.45em] mb-3 font-jp-sans" style={{ color: "rgba(193,127,36,0.6)" }}>
             QUALIFICATIONS
           </p>
-          <h2
-            className="font-jp-serif text-white"
-            style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.4rem)" }}
-          >
+          <h2 className="font-jp-serif text-white" style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.4rem)" }}>
             保有資格
           </h2>
         </div>
@@ -631,36 +846,23 @@ function Certifications() {
             <div
               key={cert.name}
               className={`fade-up fade-up-delay-${i + 1} p-7 rounded-2xl transition-all duration-300`}
-              style={{
-                border: "1px solid rgba(255,255,255,0.08)",
-                background: "rgba(255,255,255,0.03)",
-              }}
+              style={{ border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)" }}
             >
               <div className="flex items-start gap-5">
-                {/* グレードバッジ */}
                 <div
-                  className="shrink-0 w-14 h-14 rounded-full flex flex-col items-center justify-center"
+                  className="shrink-0 w-14 h-14 rounded-full flex items-center justify-center"
                   style={{ border: "1.5px solid rgba(193,127,36,0.4)" }}
                 >
-                  <span
-                    className="font-jp-serif font-bold text-lg leading-none"
-                    style={{ color: "#e8a83a" }}
-                  >
+                  <span className="font-jp-serif font-bold text-lg leading-none" style={{ color: "#e8a83a" }}>
                     {cert.grade}
                   </span>
                 </div>
                 <div>
-                  <p
-                    className="text-[9px] tracking-widest mb-1 font-jp-sans"
-                    style={{ color: "rgba(193,127,36,0.5)" }}
-                  >
+                  <p className="text-[9px] tracking-widest mb-1 font-jp-sans" style={{ color: "rgba(193,127,36,0.5)" }}>
                     {cert.note}
                   </p>
                   <h3 className="text-white font-jp-serif text-lg mb-2">{cert.name}</h3>
-                  <p
-                    className="text-xs leading-relaxed font-jp-sans"
-                    style={{ color: "rgba(255,255,255,0.35)" }}
-                  >
+                  <p className="text-xs leading-relaxed font-jp-sans" style={{ color: "rgba(255,255,255,0.35)" }}>
                     {cert.desc}
                   </p>
                 </div>
@@ -675,19 +877,19 @@ function Certifications() {
 
 // ── お問い合わせ ──────────────────────────────────────────────────────────────
 
-type FormState = { name: string; phone: string; email: string; message: string };
+type FormState  = { name: string; phone: string; email: string; message: string };
 type SendStatus = "idle" | "loading" | "success" | "error";
 
 const INPUT_CLS =
   "w-full px-4 py-3 rounded-xl text-sm font-jp-sans transition-colors bg-white text-[#1a1410] placeholder-stone-300 outline-none";
 const INPUT_STYLE = { border: "1px solid #e8e0d5", fontSize: "14px" };
-const LABEL_CLS = "block text-xs font-jp-sans mb-1.5 text-stone-500";
+const LABEL_CLS  = "block text-xs font-jp-sans mb-1.5 text-stone-500";
 
 function Contact() {
-  const [form, setForm] = useState<FormState>({ name: "", phone: "", email: "", message: "" });
+  const [form, setForm]               = useState<FormState>({ name: "", phone: "", email: "", message: "" });
   const [inquiryTypes, setInquiryTypes] = useState<string[]>([]);
-  const [status, setStatus] = useState<SendStatus>("idle");
-  const [errorMsg, setErrorMsg] = useState("");
+  const [status, setStatus]           = useState<SendStatus>("idle");
+  const [errorMsg, setErrorMsg]       = useState("");
 
   function toggleInquiry(type: string) {
     setInquiryTypes((prev) =>
@@ -700,10 +902,10 @@ function Contact() {
     setStatus("loading");
     setErrorMsg("");
     try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
+      const res  = await fetch("/api/contact", {
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, inquiryTypes }),
+        body:    JSON.stringify({ ...form, inquiryTypes }),
       });
       const data = (await res.json()) as { error?: string };
       if (res.ok) {
@@ -723,30 +925,20 @@ function Contact() {
   return (
     <section id="contact" className="py-24 md:py-32" style={{ background: "#faf8f5" }}>
       <div className="max-w-6xl mx-auto px-6 md:px-12">
-        {/* ヘッダー */}
         <div className="mb-14 fade-up">
-          <p
-            className="text-[11px] tracking-[0.4em] mb-3 font-jp-sans"
-            style={{ color: "var(--color-primary)" }}
-          >
+          <p className="text-[11px] tracking-[0.4em] mb-3 font-jp-sans" style={{ color: "var(--color-primary)" }}>
             CONTACT
           </p>
-          <h2
-            className="font-jp-serif mb-3"
-            style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", color: "#1a1410" }}
-          >
+          <h2 className="font-jp-serif mb-3" style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", color: "#1a1410" }}>
             お問い合わせ
           </h2>
-          <p className="text-sm text-stone-400 font-jp-sans">
-            相談・見積もりは無料です。お気軽にご連絡ください。
-          </p>
+          <p className="text-sm text-stone-400 font-jp-sans">相談・見積もりは無料です。お気軽にご連絡ください。</p>
         </div>
 
         <div className="grid md:grid-cols-[1fr_300px] gap-10 md:gap-16 items-start">
-          {/* ── フォーム ── */}
+          {/* フォーム */}
           <div className="fade-up">
             {status === "success" ? (
-              /* 送信完了 */
               <div
                 className="p-10 rounded-2xl text-center"
                 style={{ background: "#f0faf0", border: "1px solid #a8d8a8" }}
@@ -757,12 +949,10 @@ function Contact() {
                 >
                   <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden>
                     <circle cx="14" cy="14" r="13" stroke="#3d8b3d" strokeWidth="1.5" />
-                    <path d="M8 14 L12 18 L20 10" stroke="#3d8b3d" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M8 14L12 18L20 10" stroke="#3d8b3d" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
-                <h3 className="font-jp-serif text-xl mb-2" style={{ color: "#2d6a2d" }}>
-                  送信が完了しました
-                </h3>
+                <h3 className="font-jp-serif text-xl mb-2" style={{ color: "#2d6a2d" }}>送信が完了しました</h3>
                 <p className="text-sm text-stone-500 font-jp-sans leading-relaxed">
                   お問い合わせありがとうございます。
                   <br />
@@ -784,56 +974,38 @@ function Contact() {
                 style={{ border: "1px solid #ece6dc" }}
               >
                 <div className="grid sm:grid-cols-2 gap-5 mb-5">
-                  {/* お名前 */}
                   <div className="sm:col-span-2">
                     <label htmlFor="name" className={LABEL_CLS}>
                       お名前
-                      <span className="ml-1.5 text-[10px] tracking-wider" style={{ color: "var(--color-primary)" }}>
-                        必須
-                      </span>
+                      <span className="ml-1.5 text-[10px] tracking-wider" style={{ color: "var(--color-primary)" }}>必須</span>
                     </label>
                     <input
-                      id="name"
-                      type="text"
-                      placeholder="山田 太郎"
-                      required
+                      id="name" type="text" placeholder="山田 太郎" required
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      className={INPUT_CLS}
-                      style={INPUT_STYLE}
+                      className={INPUT_CLS} style={INPUT_STYLE}
                     />
                   </div>
-
-                  {/* 電話 */}
                   <div>
                     <label htmlFor="phone" className={LABEL_CLS}>電話番号</label>
                     <input
-                      id="phone"
-                      type="tel"
-                      placeholder="090-0000-0000"
+                      id="phone" type="tel" placeholder="090-0000-0000"
                       value={form.phone}
                       onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                      className={INPUT_CLS}
-                      style={INPUT_STYLE}
+                      className={INPUT_CLS} style={INPUT_STYLE}
                     />
                   </div>
-
-                  {/* メール */}
                   <div>
                     <label htmlFor="email" className={LABEL_CLS}>メールアドレス</label>
                     <input
-                      id="email"
-                      type="email"
-                      placeholder="example@gmail.com"
+                      id="email" type="email" placeholder="example@gmail.com"
                       value={form.email}
                       onChange={(e) => setForm({ ...form, email: e.target.value })}
-                      className={INPUT_CLS}
-                      style={INPUT_STYLE}
+                      className={INPUT_CLS} style={INPUT_STYLE}
                     />
                   </div>
                 </div>
 
-                {/* 相談の種類 */}
                 <div className="mb-5">
                   <p className={LABEL_CLS}>ご相談の種類（複数選択可）</p>
                   <div className="grid grid-cols-2 gap-2.5">
@@ -844,21 +1016,20 @@ function Contact() {
                           key={type}
                           className="flex items-center gap-2.5 p-3 rounded-xl cursor-pointer transition-colors font-jp-sans text-sm select-none"
                           style={{
-                            border: checked ? "1.5px solid rgba(193,127,36,0.6)" : "1px solid #e8e0d5",
+                            border:     checked ? "1.5px solid rgba(193,127,36,0.6)" : "1px solid #e8e0d5",
                             background: checked ? "#fdf6ea" : "white",
-                            color: checked ? "#9a6419" : "#5a4a3a",
+                            color:      checked ? "#9a6419" : "#5a4a3a",
                           }}
                         >
                           <input
-                            type="checkbox"
-                            checked={checked}
+                            type="checkbox" checked={checked}
                             onChange={() => toggleInquiry(type)}
                             className="sr-only"
                           />
                           <div
                             className="w-4 h-4 rounded shrink-0 flex items-center justify-center"
                             style={{
-                              border: checked ? "none" : "1.5px solid #c8b89a",
+                              border:     checked ? "none" : "1.5px solid #c8b89a",
                               background: checked ? "var(--color-primary)" : "transparent",
                             }}
                           >
@@ -875,17 +1046,13 @@ function Contact() {
                   </div>
                 </div>
 
-                {/* 相談内容 */}
                 <div className="mb-6">
                   <label htmlFor="message" className={LABEL_CLS}>
                     ご相談内容
-                    <span className="ml-1.5 text-[10px] tracking-wider" style={{ color: "var(--color-primary)" }}>
-                      必須
-                    </span>
+                    <span className="ml-1.5 text-[10px] tracking-wider" style={{ color: "var(--color-primary)" }}>必須</span>
                   </label>
                   <textarea
-                    id="message"
-                    rows={5}
+                    id="message" rows={5}
                     placeholder="ご相談の内容をできるだけ詳しくお書きください。（例：LDKのフローリング張り替えを検討しています。6畳ほどです。）"
                     required
                     value={form.message}
@@ -895,12 +1062,10 @@ function Contact() {
                   />
                 </div>
 
-                {/* エラー */}
                 {status === "error" && (
                   <p className="mb-4 text-sm text-red-600 font-jp-sans">{errorMsg}</p>
                 )}
 
-                {/* 送信ボタン */}
                 <button
                   type="submit"
                   disabled={status === "loading"}
@@ -917,29 +1082,23 @@ function Contact() {
             )}
           </div>
 
-          {/* ── 直接連絡先 ── */}
+          {/* 直接連絡先 */}
           <div className="fade-up fade-up-delay-1 space-y-5">
             <p className="text-xs tracking-widest text-stone-400 font-jp-sans mb-6">DIRECT CONTACT</p>
 
-            {/* 電話 */}
             <a
               href={`tel:${CONTACT.phone}`}
-              className="block p-5 rounded-2xl bg-white transition-all hover:shadow-md group"
+              className="block p-5 rounded-2xl bg-white transition-all hover:shadow-md"
               style={{ border: "1px solid #ece6dc" }}
             >
               <div className="flex items-center gap-3 mb-2">
                 <div style={{ color: "var(--color-primary)" }}><IconPhone /></div>
                 <p className="text-[10px] tracking-widest text-stone-400 font-jp-sans">PHONE</p>
               </div>
-              <p className="font-bold text-base font-jp-sans" style={{ color: "#1a1410" }}>
-                {CONTACT.phone}
-              </p>
-              <p className="text-xs text-stone-400 mt-1 font-jp-sans">
-                8:00〜18:00（土日祝も対応可）
-              </p>
+              <p className="font-bold text-base font-jp-sans" style={{ color: "#1a1410" }}>{CONTACT.phone}</p>
+              <p className="text-xs text-stone-400 mt-1 font-jp-sans">8:00〜18:00（土日祝も対応可）</p>
             </a>
 
-            {/* メール */}
             <a
               href={`mailto:${CONTACT.email}`}
               className="block p-5 rounded-2xl bg-white transition-all hover:shadow-md"
@@ -949,26 +1108,17 @@ function Contact() {
                 <div style={{ color: "var(--color-primary)" }}><IconMail /></div>
                 <p className="text-[10px] tracking-widest text-stone-400 font-jp-sans">EMAIL</p>
               </div>
-              <p className="text-sm font-jp-sans break-all" style={{ color: "#1a1410" }}>
-                {CONTACT.email}
-              </p>
+              <p className="text-sm font-jp-sans break-all" style={{ color: "#1a1410" }}>{CONTACT.email}</p>
             </a>
 
-            {/* 住所 */}
-            <div
-              className="p-5 rounded-2xl bg-white"
-              style={{ border: "1px solid #ece6dc" }}
-            >
+            <div className="p-5 rounded-2xl bg-white" style={{ border: "1px solid #ece6dc" }}>
               <div className="flex items-center gap-3 mb-2">
                 <div style={{ color: "var(--color-primary)" }}><IconPin /></div>
                 <p className="text-[10px] tracking-widest text-stone-400 font-jp-sans">ADDRESS</p>
               </div>
-              <p className="text-sm leading-relaxed font-jp-sans" style={{ color: "#1a1410" }}>
-                {CONTACT.address}
-              </p>
+              <p className="text-sm leading-relaxed font-jp-sans" style={{ color: "#1a1410" }}>{CONTACT.address}</p>
             </div>
 
-            {/* 備考 */}
             <p className="text-xs leading-relaxed text-stone-400 font-jp-sans px-1">
               相談・現地確認・見積もりはすべて無料です。河内長野市を中心に南大阪全域に対応しています。
             </p>
@@ -983,10 +1133,7 @@ function Contact() {
 
 function Footer() {
   return (
-    <footer
-      className="py-12 px-6 md:px-12"
-      style={{ background: "#1a1410" }}
-    >
+    <footer className="py-12 px-6 md:px-12" style={{ background: "#1a1410" }}>
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div>
@@ -998,9 +1145,9 @@ function Footer() {
           <nav className="flex gap-6" aria-label="フッターナビゲーション">
             {[
               { href: "#services", label: "サービス" },
-              { href: "#works", label: "施工事例" },
-              { href: "#about", label: "職人紹介" },
-              { href: "#contact", label: "お問い合わせ" },
+              { href: "#works",    label: "施工事例" },
+              { href: "#about",    label: "職人紹介" },
+              { href: "#contact",  label: "お問い合わせ" },
             ].map(({ href, label }) => (
               <a
                 key={href}
@@ -1031,7 +1178,6 @@ function Footer() {
 export default function Page() {
   const scrolled = useHeaderScroll();
 
-  // スクロールアニメーション（IntersectionObserver）
   useEffect(() => {
     const obs = new IntersectionObserver(
       (entries) => {
@@ -1052,7 +1198,7 @@ export default function Page() {
     <>
       <Header scrolled={scrolled} />
       <main>
-        <Hero />
+        <ScrollRevealHero />
         <Services />
         <About />
         <Works />
