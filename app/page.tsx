@@ -45,14 +45,22 @@ const CERTS = [
   {
     grade: "1級",
     name: "畳製作技能士",
-    note: "国家資格",
-    desc: "畳の製作・修理に関する高度な技術・知識を証明する国家最高位の資格。素材の目利きから仕上げまで、長年の経験に裏付けられた技術があります。",
+    note: "国家技能検定 最高位",
+    points: [
+      "畳製作・施工に関する国家最高位の資格",
+      "素材の目利き・製作・設置まで一貫して対応",
+      "フローリングや洋室への変更工事にも技術を活用",
+    ],
   },
   {
     grade: "2級",
     name: "福祉住環境コーディネーター",
-    note: "東京商工会議所",
-    desc: "高齢者・障がいのある方が安心して暮らせる住環境整備の専門資格。住む方の状況を丁寧にヒアリングし、最適な改修プランを提案します。",
+    note: "東京商工会議所 認定",
+    points: [
+      "高齢者・障がい者向け住環境整備の専門資格",
+      "介護保険を活用したリフォームの提案・申請サポート",
+      "手すり設置・段差解消・バリアフリー設計に対応",
+    ],
   },
 ] as const;
 
@@ -68,6 +76,8 @@ const BEFORE_AFTER_WORKS = [
     id: "bathroom-1",
     cat: "水回り改修",
     label: "バスルーム改修",
+    period: "約7〜10日",
+    cost: "80〜150万円",
     before: "/images/Barhroom-before_image1.jpeg",
     after:  "/images/Barhroom-after_image1.jpeg",
   },
@@ -75,6 +85,8 @@ const BEFORE_AFTER_WORKS = [
     id: "bathroom-2",
     cat: "水回り改修",
     label: "バスルーム改修",
+    period: "約7〜10日",
+    cost: "80〜150万円",
     before: "/images/Barhroom-before_image2.jpeg",
     after:  "/images/Barhroom-after_image2.jpeg",
   },
@@ -82,6 +94,8 @@ const BEFORE_AFTER_WORKS = [
     id: "washroom",
     cat: "水回り改修",
     label: "洗面所改修",
+    period: "約2〜3日",
+    cost: "30〜60万円",
     before: "/images/washroom-before_image1.jpg",
     after:  "/images/washroom-after_image1.jpg",
   },
@@ -89,6 +103,8 @@ const BEFORE_AFTER_WORKS = [
     id: "window",
     cat: "大工工事 / 建具",
     label: "窓・建具改修",
+    period: "約1〜2日",
+    cost: "15〜40万円",
     before: "/images/window-before.JPG",
     after:  "/images/window-after.JPG",
   },
@@ -96,6 +112,8 @@ const BEFORE_AFTER_WORKS = [
     id: "tatami",
     cat: "畳リフォーム",
     label: "和室・畳リフォーム",
+    period: "約1〜2日",
+    cost: "10〜30万円",
     before: "/images/tatami-before.jpg",
     after:  "/images/tatami-after.jpg",
   },
@@ -103,9 +121,9 @@ const BEFORE_AFTER_WORKS = [
 
 // 施工事例：単体写真
 const SINGLE_WORKS = [
-  { id: "shop",    cat: "大工工事",               label: "店舗新築工事",       src: "/images/Shop-making.JPG" },
-  { id: "kitchen", cat: "大工工事 / 内装",        label: "キッチン工事",       src: "/images/kitchen.JPG" },
-  { id: "fence",   cat: "大工工事 / エクステリア", label: "ウッドフェンス設置", src: "/images/wood-fence.JPG" },
+  { id: "shop",    cat: "大工工事",               label: "店舗新築工事",       period: "約3ヶ月",  cost: "要相談",     src: "/images/Shop-making.JPG" },
+  { id: "kitchen", cat: "大工工事 / 内装",        label: "キッチン工事",       period: "約3〜5日", cost: "50〜100万円", src: "/images/kitchen.JPG" },
+  { id: "fence",   cat: "大工工事 / エクステリア", label: "ウッドフェンス設置", period: "約1〜2日", cost: "20〜50万円",  src: "/images/wood-fence.JPG" },
 ] as const;
 
 // ── SVGアイコン ───────────────────────────────────────────────────────────────
@@ -629,22 +647,36 @@ function About() {
                 {CERTS.map((cert) => (
                   <div
                     key={cert.name}
-                    className="flex items-start gap-4 p-5 rounded-xl bg-white"
-                    style={{ border: "1px solid rgba(193,127,36,0.15)", borderLeft: "3px solid var(--color-primary)" }}
+                    className="p-5 rounded-xl bg-white"
+                    style={{ border: "1px solid rgba(193,127,36,0.18)", borderLeft: "4px solid var(--color-primary)" }}
                   >
-                    <div
-                      className="shrink-0 w-12 h-12 rounded-full flex items-center justify-center"
-                      style={{ background: "#faf4ea", border: "1px solid rgba(193,127,36,0.2)" }}
-                    >
-                      <span className="font-jp-serif font-bold text-base leading-none" style={{ color: "var(--color-primary)" }}>
-                        {cert.grade}
-                      </span>
+                    <div className="flex items-center gap-3 mb-3">
+                      {/* グレードスタンプ */}
+                      <div
+                        className="shrink-0 px-3 py-1.5 rounded-lg"
+                        style={{ background: "var(--color-primary)" }}
+                      >
+                        <span className="font-jp-serif font-black text-white text-lg leading-none">
+                          {cert.grade}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-[9px] tracking-widest font-jp-sans mb-0.5" style={{ color: "rgba(193,127,36,0.6)" }}>
+                          {cert.note}
+                        </p>
+                        <p className="font-jp-serif font-bold text-lg leading-tight" style={{ color: "#1a1410" }}>
+                          {cert.name}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[9px] tracking-widest text-stone-400 mb-0.5 font-jp-sans">{cert.note}</p>
-                      <p className="font-jp-serif text-base mb-1" style={{ color: "#1a1410" }}>{cert.name}</p>
-                      <p className="text-xs leading-relaxed text-stone-400 font-jp-sans">{cert.desc}</p>
-                    </div>
+                    <ul className="space-y-1.5">
+                      {cert.points.map((pt) => (
+                        <li key={pt} className="flex items-start gap-2 text-xs text-stone-500 font-jp-sans leading-relaxed">
+                          <div className="mt-1.5 w-1 h-1 rounded-full shrink-0" style={{ background: "var(--color-primary)" }} />
+                          {pt}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 ))}
               </div>
@@ -682,11 +714,15 @@ function BeforeAfterSlider({
   after,
   label,
   cat,
+  period,
+  cost,
 }: {
   before: string;
   after: string;
   label: string;
   cat: string;
+  period: string;
+  cost: string;
 }) {
   const [pos, setPos] = useState(50);
   const dragging = useRef(false);
@@ -804,10 +840,26 @@ function BeforeAfterSlider({
 
       {/* キャプション */}
       <div className="mt-3 px-1">
-        <p className="text-[10px] tracking-widest font-jp-sans" style={{ color: "rgba(193,127,36,0.7)" }}>
+        <p className="text-[10px] tracking-widest font-jp-sans mb-1" style={{ color: "rgba(193,127,36,0.7)" }}>
           {cat}
         </p>
-        <p className="text-sm font-jp-sans" style={{ color: "#1a1410" }}>{label}</p>
+        <p className="text-sm font-bold font-jp-sans mb-2" style={{ color: "#1a1410" }}>{label}</p>
+        <div className="flex gap-3">
+          <span className="flex items-center gap-1 text-xs text-stone-400 font-jp-sans">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+              <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2"/>
+              <path d="M6 3.5V6L7.5 7.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+            </svg>
+            工期 {period}
+          </span>
+          <span className="flex items-center gap-1 text-xs text-stone-400 font-jp-sans">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+              <rect x="1" y="2.5" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.2"/>
+              <path d="M4 5.5h4M4 7.5h2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+            </svg>
+            {cost}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -840,6 +892,8 @@ function Works() {
                 after={w.after}
                 label={w.label}
                 cat={w.cat}
+                period={w.period}
+                cost={w.cost}
               />
             </div>
           ))}
@@ -858,10 +912,26 @@ function Works() {
                 />
               </div>
               <div className="mt-3 px-1">
-                <p className="text-[10px] tracking-widest font-jp-sans" style={{ color: "rgba(193,127,36,0.7)" }}>
+                <p className="text-[10px] tracking-widest font-jp-sans mb-1" style={{ color: "rgba(193,127,36,0.7)" }}>
                   {w.cat}
                 </p>
-                <p className="text-sm font-jp-sans" style={{ color: "#1a1410" }}>{w.label}</p>
+                <p className="text-sm font-bold font-jp-sans mb-2" style={{ color: "#1a1410" }}>{w.label}</p>
+                <div className="flex gap-3">
+                  <span className="flex items-center gap-1 text-xs text-stone-400 font-jp-sans">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+                      <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2"/>
+                      <path d="M6 3.5V6L7.5 7.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                    </svg>
+                    工期 {w.period}
+                  </span>
+                  <span className="flex items-center gap-1 text-xs text-stone-400 font-jp-sans">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+                      <rect x="1" y="2.5" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.2"/>
+                      <path d="M4 5.5h4M4 7.5h2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                    </svg>
+                    {w.cost}
+                  </span>
+                </div>
               </div>
             </div>
           ))}
