@@ -66,8 +66,8 @@ const CERTS = [
 
 // Hero ビフォーアフター写真
 const HERO_REVEAL = {
-  before: "/images/Japanese-room-before.jpg",
-  after:  "/images/Japanese-room-after.jpg",
+  before: "/images/Hero-before.png",
+  after:  "/images/Hero-after.png",
 } as const;
 
 // 施工事例：ビフォーアフターペア
@@ -116,6 +116,15 @@ const BEFORE_AFTER_WORKS = [
     cost: "10〜30万円",
     before: "/images/tatami-before.jpg",
     after:  "/images/tatami-after.jpg",
+  },
+  {
+    id: "living",
+    cat: "大工工事 / 内装",
+    label: "和室→洋室リビング改修",
+    period: "約3〜4週間",
+    cost: "200〜400万円",
+    before: "/images/Hero-before.png",
+    after:  "/images/Hero-after.png",
   },
 ] as const;
 
