@@ -92,6 +92,13 @@ const BEFORE_AFTER_WORKS = [
     before: "/images/window-before.JPG",
     after:  "/images/window-after.JPG",
   },
+  {
+    id: "tatami",
+    cat: "畳リフォーム",
+    label: "和室・畳リフォーム",
+    before: "/images/tatami-before.jpg",
+    after:  "/images/tatami-after.jpg",
+  },
 ] as const;
 
 // 施工事例：単体写真
