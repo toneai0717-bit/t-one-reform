@@ -564,9 +564,9 @@ function Services() {
 
 function About() {
   return (
-    <section id="about" className="py-24 md:py-32" style={{ background: "#f3ede5" }}>
+    <section id="about" className="py-16 md:py-24" style={{ background: "#f3ede5" }}>
       <div className="max-w-6xl mx-auto px-6 md:px-12">
-        <div className="grid md:grid-cols-2 gap-12 md:gap-20 items-start">
+        <div className="grid md:grid-cols-2 gap-10 md:gap-16 items-start">
           {/* 写真プレースホルダー */}
           <div className="fade-up order-2 md:order-1 md:sticky md:top-24">
             <div
@@ -585,7 +585,7 @@ function About() {
           </div>
 
           {/* テキスト＋資格 */}
-          <div className="order-1 md:order-2 space-y-10">
+          <div className="order-1 md:order-2 space-y-8">
 
             {/* プロフィール */}
             <div className="fade-up">
@@ -593,14 +593,14 @@ function About() {
                 ABOUT
               </p>
               <h2
-                className="font-jp-serif leading-tight mb-6"
-                style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.6rem)", color: "#1a1410" }}
+                className="font-jp-serif leading-tight mb-4"
+                style={{ fontSize: "clamp(1.4rem, 3vw, 2.2rem)", color: "#1a1410" }}
               >
                 素材と向き合う、
                 <br />
                 職人の眼
               </h2>
-              <div className="space-y-4 text-sm leading-[1.95] text-stone-500 font-jp-sans">
+              <div className="space-y-3 text-sm leading-[1.85] text-stone-500 font-jp-sans">
                 <p>
                   もともとは畳職人として、畳の製作・施工に長年携わってきました。畳製作技能士1級を取得し、素材の目利きと精緻な手仕事を磨いてきた経験が、現在の大工工事にも確かに生きています。
                 </p>
@@ -646,9 +646,8 @@ function About() {
             {/* スペック */}
             <div className="fade-up fade-up-delay-2 grid grid-cols-2 gap-3">
               {[
-                { label: "相談・現地確認・見積もり", value: "すべて無料" },
-                { label: "対応エリア", value: "河内長野市・南大阪全域" },
-                { label: "受付時間", value: "8:00〜18:00（土日祝可）" },
+                { label: "対応エリア", value: "関西全域" },
+                { label: "受付時間", value: "8:00〜17:00（日・祝休）" },
                 { label: "営業形態", value: "個人事業" },
               ].map((item) => (
                 <div
@@ -1086,7 +1085,7 @@ function Contact() {
                 <p className="text-[10px] tracking-widest text-stone-400 font-jp-sans">PHONE</p>
               </div>
               <p className="font-bold text-base font-jp-sans" style={{ color: "#1a1410" }}>{CONTACT.phone}</p>
-              <p className="text-xs text-stone-400 mt-1 font-jp-sans">8:00〜18:00（土日祝も対応可）</p>
+              <p className="text-xs text-stone-400 mt-1 font-jp-sans">8:00〜17:00（日・祝休）</p>
             </a>
 
             <a
